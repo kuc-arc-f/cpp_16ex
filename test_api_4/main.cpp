@@ -83,6 +83,37 @@ public:
         std::cout << "切断しました" << std::endl;
     }
     
+    std::string updateMessage(const std::string& message) {
+        std::string ret = "";
+        if (!connected) {
+            std::cerr << "未接続です" << std::endl;
+            return "error, not connect";
+        }
+        
+        // データ送信
+        int bytes_sent = write(sock_fd, message.c_str(), message.length());
+        if (bytes_sent < 0) {
+            std::cerr << "送信エラー" << std::endl;
+            return "error , send data";
+        }
+        
+        std::cout << "送信: " << message;
+        
+        // 応答受信
+        char buffer[1024];
+        memset(buffer, 0, sizeof(buffer));
+        
+        int bytes_read = read(sock_fd, buffer, sizeof(buffer) - 1);
+        if (bytes_read <= 0) {
+            std::cerr << "受信エラー" << std::endl;
+            return "error, receive data";
+        }
+        
+        std::cout << "応答: " << buffer;
+        ret = buffer;
+        return ret;
+    }
+
     std::string sendMessage(const std::string& message) {
         std::string ret = "";
         if (!connected) {
@@ -208,7 +239,7 @@ int main() {
         if (!client.connect()) {
             return crow::response(500, "error , TCP client.connect");
         }
-        auto resp = client.sendMessage(json_str);
+        auto resp = client.updateMessage(json_str);
         std::cout << "resp=" << resp << std::endl;
         client.disconnect();
 
@@ -217,6 +248,7 @@ int main() {
         
         return crow::response(result);
     });
+    
     CROW_ROUTE(app, "/api/select")
     .methods(crow::HTTPMethod::POST)([](const crow::request& req) {
         auto body = crow::json::load(req.body);
