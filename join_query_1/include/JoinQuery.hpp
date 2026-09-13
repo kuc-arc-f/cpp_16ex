@@ -37,7 +37,7 @@ public:
             
             json << "{"
                  << "\"dept_id\":" << id << ","
-                 << "\"buy_item_name\":\"" << (buy_item_name ? reinterpret_cast<const char*>(buy_item_name) : "") << "\","
+                 << "\"buy_item_name\":\"" << (buy_item_name ? reinterpret_cast<const char*>(buy_item_name) : "") << "\""
                  << "}";
         }
         
