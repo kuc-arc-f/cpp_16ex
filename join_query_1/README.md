@@ -48,6 +48,7 @@ clang++ -std=c++11 -pthread tcp_server.cpp -o tcp_server -lsqlite3 -luuid
 ```
 {"action_name": "select_ex2", "sql":"SELECT depts.id, buy_items.name from  depts LEFT OUTER JOIN buy_items  ON depts.id = buy_items.dept_id WHERE depts.id = 1;"}
 ```
+
 ***
 ### blog
 

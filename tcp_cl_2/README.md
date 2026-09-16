@@ -27,10 +27,18 @@ g++ -std=c++11 tcp_client.cpp -o tcp_client
 * TestCode
 * update
 ```
-{"action_name": "update", "table":"todos","sql":"INSERT INTO todos (title) VALUES ('title_1');"}
+{"action_name": "update", "table":"temp","sql":"INSERT INTO temp (title) VALUES ('title1');"}
 ```
 * select
 ```
-{"action_name": "select", "table":"todos","sql":"SELECT * FROM todos;"}
+{"action_name": "select", "table":"temp","sql":"SELECT * FROM temp;"}
 ```
+***
+* TestCode : node - select
+* ./test1.js
+
+```
+node test1.js
+```
+
 ***
