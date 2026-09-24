@@ -1,0 +1,158 @@
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <map>
+#include <stdexcept>
+#include <vector>
+#include <curl/curl.h>
+#include <nlohmann/json.hpp> // JSONライブラリ
+
+#include "models.hpp"
+#include "include/EmbeddingClient.hpp"
+#include "include/openrouter_client.hpp"
+#include "include/HttpClient.hpp"
+#include "include/dotenv.h"
+
+using namespace std;
+
+using json = nlohmann::json;
+
+std::string TABLE_NAME = "document";
+std::string API_URL_BASE = "http://localhost:8888";
+
+struct QueryReq {
+    std::string input;
+};   
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(QueryReq, input)
+struct ChatQuery {
+    std::string role;
+    std::string content;
+};
+// これ一行で、QueryReq <=> json の変換が魔法のように可能になります
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ChatQuery, role, content)
+struct ChatRequest {
+    std::string model;
+    std::vector<ChatQuery> messages;
+    double temperature;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ChatRequest, model, messages, temperature)
+
+struct SearchResponse {
+    std::string ret;
+    std::string text;
+};   
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SearchResponse, ret, text)
+
+std::string extractContent(const std::string& jsonStr)
+{
+    try {
+        auto j = nlohmann::json::parse(jsonStr);
+        return j["choices"][0]["message"]["content"].get<std::string>();
+    } catch (const std::exception& e) {
+        std::cerr << "[ERROR] JSON parse: " << e.what() << "\n";
+        return "";
+    }
+}
+// ─────────────────────────────────────────────
+// main : 動作確認サンプル
+// ─────────────────────────────────────────────
+int main(int argc, char* argv[])
+{
+    dotenv::init();
+    const char* api_key = std::getenv("OPENROUTER_API_KEY");
+    if (api_key != nullptr) {
+        //std::cout << "api_key:" << api_key << std::endl;
+    }else{
+        std::cerr << "Error: OPENROUTER_API_KEY environment variable not set" << std::endl;
+        std::cerr << "Please set it with: export OPENROUTER_API_KEY=your_api_key_here" << std::endl;
+        return -1;
+    }      
+    const char* model_name = std::getenv("OPENROUTER_MODEL");
+    if (!model_name) {
+        std::cerr << "Error: OPENROUTER_MODEL environment variable not set" << std::endl;
+        return -1;
+    }         
+    //std::cout << "arg_count=" << argc << "\n";
+    //std::cout << "argv[0]=" << argv[0] << "\n";
+    if(argc < 2) {
+        std::cerr << "[ERROR] argment none" << "\n";
+        return -1;
+    }
+    int arg_count = argc;
+    std::string query = argv[1];
+    //std::cout << "query=" << query << "\n";
+
+    try{
+        auto embeddings = EmbeddingStart(query);
+        //std::cout << "vlen=" << embeddings.size() << std::endl;
+        auto vec = embeddings;
+        stringstream ss;
+        ss << "[";
+        for (size_t i = 0; i < embeddings.size(); ++i) {
+            if (i > 0) ss << ",";
+            ss << embeddings[i];
+        }
+        ss << "]";
+        string emb_str = ss.str();  
+        std::string res1 = emb_str.substr(0, 40);      
+        std::cout << "res1=" << res1 << std::endl;
+        VectorSearchReq req1;
+        req1.table = TABLE_NAME;
+        req1.limit = 5;
+        req1.vector = emb_str;
+        json j1 = req1; // 構造体を代入するだけ！
+        std::string json_str = j1.dump();
+        //std::cout << json_str << std::endl;
+
+        HttpClient htClient(30 /*timeout*/, true /*verify_ssl*/);         
+        std::string url = API_URL_BASE + "/api/select";
+
+        auto resp = htClient.post_json(url, json_str);
+        print_response("POST-JSON:", resp);        
+        //std::cout << "body=" << resp.body << std::endl;
+
+        json j2 = json::parse(resp.body);
+        std::string data = j2.at("data").get<std::string>();
+        std::cout << "data=" << data << "\n";        
+        json j3 = json::parse(data);
+        std::cout << "j3.size=" << j3.size() << "\n";
+        std::string content = "";
+        if (j3.size() > 0){
+            content = j3[0].at("content").get<std::string>();
+        }
+        //std::cout << "content=" << content << "\n";        
+        std::string out_str = "日本語で、回答して欲しい。 \n要約して欲しい。\n\n";
+        if(content.empty()){
+            out_str.append("user query: ");
+            out_str.append(query);
+            out_str.append(" \n");
+        }else{
+            out_str.append("context:");
+            out_str.append(content);
+            out_str.append("\n user query: ");
+            out_str.append(query);
+            out_str.append(" \n");
+        }
+        std::cout << "out_str=" << out_str  << std::endl;
+        OpenRouterClient client(api_key);
+        auto response = client.sendChatCompletion(
+            model_name,
+            out_str,
+            1.0,
+            2000
+        );
+
+        if (response.has_value()) {
+            std::cout << "AI: " << response.value() << std::endl;
+            return -1;
+        } else {
+            std::cerr << "Failed to get response from API" << std::endl;
+            return -1;
+        }
+    } catch (const std::exception& e) {
+        std::cout << "Error , main" << std::endl;
+        return 0;
+    }        
+    return 0;
+}
+
