@@ -1,7 +1,8 @@
 CXX = clang++
 #CXX = g++
 
-CXXFLAGS = -shared -fPIC -std=c++17 -lsqlite3 -lcurl -luuid
+#CXXFLAGS = -shared -fPIC -std=c++17 -lsqlite3 -lcurl -luuid
+CXXFLAGS = -shared -fPIC -std=c++17 -lcurl -luuid
 
 TARGET = libsample.so
 all: $(TARGET)
