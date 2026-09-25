@@ -1,20 +1,26 @@
-﻿# vec_cl_1
+﻿# vec_cl_4
 
  Version: 0.9.1
 
- date    : 2026/09/23
+ date    : 2026/09/25
  
  update :
 
 ***
 
-C++ , RAG CLI vector add ,search
+C++ RAG CLI , vector add search Jev
 
+* TypeSafe Jev
 * embedding : qwen3-embedding-8b
 * OpenRouter 
 * LLVM CLang
 * make
 * Linux
+
+***
+### related DB Server
+
+https://github.com/kuc-arc-f/cpp_vec_server_db1
 
 ***
 * LIB
@@ -50,5 +56,4 @@ OPENROUTER_MODEL=deepseek/deepseek-v4-flash
 ```
 ./search hello
 ```
-
 ***
