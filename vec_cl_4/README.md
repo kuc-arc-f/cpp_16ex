@@ -57,3 +57,7 @@ OPENROUTER_MODEL=deepseek/deepseek-v4-flash
 ./search hello
 ```
 ***
+### blog
+
+https://zenn.dev/knaka0209/scraps/0530606d0dbeca
+
