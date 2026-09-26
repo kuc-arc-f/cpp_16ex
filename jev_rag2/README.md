@@ -40,6 +40,11 @@ sudo apt install nlohmann-json3-dev
 sudo apt install libcurl4-openssl-dev
 ```
 ***
+* build
+```
+make all
+```
+
 * embed build
 ```
 clang++ -std=c++17 -I./include -o embed embed.cpp -lcurl
