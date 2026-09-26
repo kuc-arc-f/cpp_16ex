@@ -23,33 +23,6 @@ extern "C" {
         return output;    
     }
 
-    /*
-    char* vector_search(const char* input)
-    {
-        dotenv::init();
-        std::string input_str(input);
-        MyRag rLib("");
-        std::string result = rLib.vector_search(input_str);
-        char* output = new char[result.length() + 1];
-        strcpy(output, result.c_str());
-        return output;    
-    }
-    */
-
-    /*
-    char* llm_search(const char* query, const char* input)
-    {
-        dotenv::init();
-        std::string query_str(query);
-        std::string input_str(input);
-        MyRag rLib("");
-        std::string result = rLib.llm_search(query_str, input_str);
-        char* output = new char[result.length() + 1];
-        strcpy(output, result.c_str());
-        return output;    
-    }
-    */
-
     int add(int a, int b)
     {
         return a + b;

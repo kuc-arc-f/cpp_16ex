@@ -15,6 +15,7 @@ C++ TUI , Jev RAG Search
 * OpenRouter 
 * LLVM CLang
 * make
+* node 22
 * Linux
 
 ***
@@ -68,4 +69,9 @@ OPENROUTER_MODEL=deepseek/deepseek-v4-flash
 pnpm i
 npm run start
 ```
+
 ***
+### blog
+
+https://zenn.dev/link/comments/531b18ebbadb4f
+

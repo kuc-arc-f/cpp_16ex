@@ -13,7 +13,6 @@
 
 #include "models.hpp"
 #include "EmbeddingClient.hpp"
-#include "db_add.hpp"
 #include "my_config.hpp"
 #include "openrouter_client.hpp"
 #include "HttpClient.hpp"
@@ -210,14 +209,14 @@ private:
             auto embeddings = EmbeddingStart(query);
             //std::cout << "vlen=" << embeddings.size() << std::endl;
             auto vec = embeddings;
-            stringstream ss;
+            std::stringstream ss;
             ss << "[";
             for (size_t i = 0; i < embeddings.size(); ++i) {
                 if (i > 0) ss << ",";
                 ss << embeddings[i];
             }
             ss << "]";
-            string emb_str = ss.str();  
+            std::string emb_str = ss.str();  
             std::string res1 = emb_str.substr(0, 40);      
             std::cout << "res1=" << res1 << std::endl;
             VectorSearchReq req1;

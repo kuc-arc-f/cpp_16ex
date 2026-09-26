@@ -1,4 +1,3 @@
-
 #include <fstream>
 #include <filesystem>
 #include <iostream>
@@ -10,7 +9,6 @@
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 
-//#include "db_add.hpp"
 #include "include/models.hpp"
 #include "my_config.hpp"
 #include "include/EmbeddingClient.hpp"
@@ -23,24 +21,6 @@ using json = nlohmann::json;
 
 std::string TABLE_NAME = "document";
 std::string API_URL_BASE = "http://localhost:8888";
-//const std::string DB_PATH = "example.db";
-
-/*
-struct HttpResponse {
-    long        status_code = 0;
-    std::string body;
-    std::string error;
-
-    bool is_ok() const { return status_code >= 200 && status_code < 300; }
-};
-static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata)
-{
-    size_t total = size * nmemb;
-    std::string* body = static_cast<std::string*>(userdata);
-    body->append(ptr, total);
-    return total;
-}
-*/
 
 struct QueryReq {
     std::string input;
@@ -85,9 +65,6 @@ int ebmed(std::string query){
 
         auto resp = client.post_json(url, json_str);
         print_response("POST-JSON:", resp);
-        //DbAdd app(DB_PATH);
-        //std::vector<float> tmp_vec = {0.1f, 0.2f, 0.3f};
-        //app.add_embed(vec, query);
     } catch (const std::exception& e) {
         std::cout << "Error , main" << std::endl;
         return 1;
