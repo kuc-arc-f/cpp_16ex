@@ -58,61 +58,6 @@ private:
 
     ~MyRag() {}
 
-    std::string llm_search(std::string query, std::string input){
-        std::string ret = "";
-        try{
-            // API_KEYを環境変数から取得（または直接設定）
-            const char* api_key = std::getenv("OPENROUTER_API_KEY");
-            if (api_key != nullptr) {
-                //std::cout << "api_key:" << api_key << std::endl;
-            }else{
-                std::cerr << "Error: OPENROUTER_API_KEY environment variable not set" << std::endl;
-                std::cerr << "Please set it with: export OPENROUTER_API_KEY=your_api_key_here" << std::endl;
-                return ret;
-            }      
-            const char* model_name = std::getenv("OPENROUTER_MODEL");
-            if (!model_name) {
-                std::cerr << "Error: OPENROUTER_MODEL environment variable not set" << std::endl;
-                return ret;
-            }          
-            std::string resp_str= input;
-            std::string out_str = "日本語で、回答して欲しい。 \n要約して欲しい。\n\n";
-            if(resp_str.empty()){
-                out_str.append("user query: ");
-                out_str.append(query);
-                out_str.append(" \n");
-            }else{
-                out_str.append("context:");
-                out_str.append(resp_str);
-                out_str.append("\n user query: ");
-                out_str.append(query);
-                out_str.append(" \n");
-            }                    
-            //std::cout << out_str  << std::endl; 
-            OpenRouterClient client(api_key);
-            auto response = client.sendChatCompletion(
-                model_name,
-                out_str,
-                1.0,
-                2000
-            );
-
-            if (response.has_value()) {
-                //std::cout << "Response: " << response.value() << std::endl;
-                auto outStr = response.value();
-                ret = outStr;
-                return ret;
-            } else {
-                std::cerr << "Failed to get response from API" << std::endl;
-                return ret;
-            }
-
-            return ret;
-        } catch (const std::exception& e) {
-            std::cout << "Error , main" << std::endl;
-        } 
-        return ret; 
-    }    
 
     std::string get_max_score(std::string json_str ){
         std::string ret = "";
@@ -287,4 +232,76 @@ private:
         }  
         return ret;        
     }
+
+    std::string jev_search(std::string query){
+        std::string ret = "";
+        try{
+            // API_KEYを環境変数から取得（または直接設定）
+            const char* api_key = std::getenv("OPENROUTER_API_KEY");
+            if (api_key != nullptr) {
+                //std::cout << "api_key:" << api_key << std::endl;
+            }else{
+                std::cerr << "Error: OPENROUTER_API_KEY environment variable not set" << std::endl;
+                std::cerr << "Please set it with: export OPENROUTER_API_KEY=your_api_key_here" << std::endl;
+                return ret;
+            }      
+            const char* model_name = std::getenv("OPENROUTER_MODEL");
+            if (!model_name) {
+                std::cerr << "Error: OPENROUTER_MODEL environment variable not set" << std::endl;
+                return ret;
+            }      
+
+            //std::string dirPath = DATA_PATH;
+            auto embeddings = EmbeddingStart(query);
+            //std::cout << "vlen=" << embeddings.size() << std::endl;
+            auto vec = embeddings;
+            std::stringstream ss;
+            ss << "[";
+            for (size_t i = 0; i < embeddings.size(); ++i) {
+                if (i > 0) ss << ",";
+                ss << embeddings[i];
+            }
+            ss << "]";
+            std::string emb_str = ss.str();  
+            std::string res1 = emb_str.substr(0, 40);      
+            std::cout << "res1=" << res1 << std::endl;
+            VectorSearchReq req1;
+            req1.table = TABLE_NAME;
+            req1.limit = 3;
+            req1.vector = emb_str;
+            json j1 = req1; // 構造体を代入するだけ！
+            std::string json_str = j1.dump();
+            //std::cout << json_str << std::endl;
+
+            HttpClient htClient(30 /*timeout*/, true /*verify_ssl*/);         
+            std::string url = API_URL_BASE + "/api/select";
+
+            auto resp = htClient.post_json(url, json_str);
+            json j2 = json::parse(resp.body);
+            std::string data = j2.at("data").get<std::string>();
+            //std::cout << "data=" << data << "\n";        
+            json j3 = json::parse(data);
+            std::cout << "j3.size=" << j3.size() << "\n";
+
+            std::string content = "";
+            if (j3.size() == 1){
+                content = j3[0].at("content").get<std::string>();
+            }
+            // Jev score
+            std::vector<std::string> vecJev;
+            if(j3.size() >=2){
+                for(int i=0; i < j3.size(); i++) {
+                    std::string row = j3[i].at("content").get<std::string>();
+                    vecJev.push_back(row);
+                }
+                content = get_jev_item(api_key, vecJev, query);
+            }
+            std::cout << "content=" << content << "\n"; 
+            ret = content;
+            return ret;
+        } catch (const std::exception& e) {
+            std::cout << "Error , main" << std::endl;
+        }  
+        return ret;        
+    }    
 };

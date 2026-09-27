@@ -23,6 +23,18 @@ extern "C" {
         return output;    
     }
 
+    char* jev_search(const char* input)
+    {
+        dotenv::init();
+        std::string input_str(input);
+        //std::cout << "todo_add.Received in C++: " << input_str << std::endl;
+        MyRag rLib("");
+        std::string result = rLib.jev_search(input_str);
+        char* output = new char[result.length() + 1];
+        strcpy(output, result.c_str());
+        return output;    
+    }
+
     int add(int a, int b)
     {
         return a + b;
