@@ -20,6 +20,7 @@ using json = nlohmann::json;
 
 std::string TABLE_NAME = "document";
 std::string API_URL_BASE = "http://localhost:8888";
+std::string PREFIX_KEY="";
 
 struct QueryReq {
     std::string input;
@@ -151,6 +152,15 @@ int main(int argc, char* argv[])
         std::cerr << "[ERROR] argment none" << "\n";
         return -1;
     }
+    const char* prefix = std::getenv("PREFIX_KEY");
+    if (prefix != nullptr) {
+        std::cout << "prefix:" << prefix << std::endl;
+        PREFIX_KEY = prefix;
+    }else{
+        std::cerr << "Error: PREFIX_KEY environment variable not set" << std::endl;
+        return -1;
+    }
+
     int arg_count = argc;
     std::string query = argv[1];
 
@@ -190,7 +200,7 @@ int main(int argc, char* argv[])
         std::string res1 = emb_str.substr(0, 40);      
         std::cout << "res1=" << res1 << std::endl;   
         VectorSearchReq req1;
-        req1.table = TABLE_NAME;
+        req1.prefix = PREFIX_KEY;
         req1.limit = 3;
         req1.vector = emb_str;
         json j1 = req1;

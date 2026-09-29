@@ -22,6 +22,7 @@ using json = nlohmann::json;
 
 std::string TABLE_NAME = "document";
 std::string API_URL_BASE = "http://localhost:8888";
+std::string PREFIX_KEY="";
 
 struct QueryReq {
     std::string input;
@@ -69,7 +70,7 @@ int ebmed(std::string query){
             std::string res1 = emb_str.substr(0, 40);      
             std::cout << "res1=" << res1 << std::endl;   
             VectorCreateReq vdat;
-            vdat.table = TABLE_NAME;
+            vdat.prefix = PREFIX_KEY;
             vdat.content = query;
             vdat.vector = emb_str;
             json j1 = vdat;
@@ -147,6 +148,14 @@ int main(int argc, char* argv[])
     }else{
         std::cerr << "Error: OPENROUTER_API_KEY environment variable not set" << std::endl;
         std::cerr << "Please set it with: export OPENROUTER_API_KEY=your_api_key_here" << std::endl;
+        return -1;
+    }
+    const char* prefix = std::getenv("PREFIX_KEY");
+    if (prefix != nullptr) {
+        std::cout << "prefix:" << prefix << std::endl;
+        PREFIX_KEY = prefix;
+    }else{
+        std::cerr << "Error: PREFIX_KEY environment variable not set" << std::endl;
         return -1;
     }
     // 引数でフォルダを指定、省略時はカレントディレクトリ

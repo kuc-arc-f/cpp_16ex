@@ -11,18 +11,18 @@ struct EmbedData {
     std::string content;
 };
 struct VectorCreateReq {
-    std::string table;
+    std::string prefix;
     std::string content;
     std::string vector;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(VectorCreateReq, table, content, vector)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(VectorCreateReq, prefix, content, vector)
 
 struct VectorSearchReq {
-    std::string table;
+    std::string prefix;
     int limit;
     std::string vector;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(VectorSearchReq, table, limit, vector)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(VectorSearchReq, prefix, limit, vector)
 
 struct ResultEmbed {
     std::string id;

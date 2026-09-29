@@ -4,10 +4,16 @@
 
  date    : 2026/09/11
  
- update :
+ update : 2026/09/28
 
 ***
 
 C++ Linux , example
+
+***
+### version
+
+* V_0_9_2: fix, redis_cl_1
+* V_0_9_1: new
 
 ***
