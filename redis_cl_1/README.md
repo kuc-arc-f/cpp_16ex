@@ -46,7 +46,10 @@ clang++ -std=c++17 -I./include -o search search.cpp -lcurl
 
 ***
 * .env
+* PREFIX_KEY: redis data type
+
 ```
+PREFIX_KEY=doc1:
 OPENROUTER_API_KEY=
 OPENROUTER_MODEL=deepseek/deepseek-v4-flash
 ```
