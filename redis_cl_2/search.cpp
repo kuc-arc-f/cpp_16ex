@@ -20,6 +20,7 @@ using json = nlohmann::json;
 
 std::string TABLE_NAME = "document";
 std::string API_URL_BASE = "http://localhost:8888";
+std::string PREFIX_KEY="";
 
 struct QueryReq {
     std::string input;
@@ -140,12 +141,16 @@ int main(int argc, char* argv[])
         std::cerr << "Error: OPENROUTER_API_KEY environment variable not set" << std::endl;
         std::cerr << "Please set it with: export OPENROUTER_API_KEY=your_api_key_here" << std::endl;
         return -1;
-    }      
-    const char* model_name = std::getenv("OPENROUTER_MODEL");
-    if (!model_name) {
-        std::cerr << "Error: OPENROUTER_MODEL environment variable not set" << std::endl;
+    }
+    const char* prefix = std::getenv("PREFIX_KEY");
+    if (prefix != nullptr) {
+        std::cout << "prefix:" << prefix << std::endl;
+        PREFIX_KEY = prefix;
+    }else{
+        std::cerr << "Error: PREFIX_KEY environment variable not set" << std::endl;
         return -1;
-    }         
+    }    
+
     //std::cout << "arg_count=" << argc << "\n";
     //std::cout << "argv[0]=" << argv[0] << "\n";
     if(argc < 2) {
@@ -171,7 +176,7 @@ int main(int argc, char* argv[])
         std::string res1 = emb_str.substr(0, 40);      
         std::cout << "res1=" << res1 << std::endl;
         VectorSearchReq req1;
-        req1.table = TABLE_NAME;
+        req1.prefix = PREFIX_KEY;
         req1.limit = 3;
         req1.vector = emb_str;
         json j1 = req1; // 構造体を代入するだけ！

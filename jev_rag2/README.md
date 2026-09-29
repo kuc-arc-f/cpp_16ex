@@ -53,6 +53,7 @@ clang++ -std=c++17 -I./include -o embed embed.cpp -lcurl
 
 ***
 * .env
+
 ```
 OPENROUTER_API_KEY=
 OPENROUTER_MODEL=deepseek/deepseek-v4-flash
