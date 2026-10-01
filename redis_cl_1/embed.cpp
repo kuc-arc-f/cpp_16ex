@@ -52,6 +52,10 @@ int ebmed(std::string query){
             return 0;
         }
         std::cout << "Status : " << res2.status_code << "\n";
+        if (res2.is_ok() == false) {
+            std::cout << "error ,  embedding res2.status_code = NG" << "\n";
+            return ret;
+        }
         if (res2.is_ok()) {
             std::string str = res2.body;
             json j = json::parse(str);
@@ -80,7 +84,12 @@ int ebmed(std::string query){
             std::string url = API_URL_BASE + "/api/insert";
 
             auto resp = client.post_json(url, json_str);
-            print_response("POST-JSON:", resp);                     
+            print_response("POST-JSON:", resp); 
+            std::cout << "resp.Status : " << resp.status_code << "\n";  
+            if (resp.is_ok() == false) {
+                std::cout << "error ,  /api/insert resp.status_code = NG" << "\n";
+                return 0;
+            }                  
         }
         return 1;
         string emb_str = "";  
@@ -127,9 +136,17 @@ void addTextFiles(const std::vector<TextFile>& files) {
             std::string tmp = tf.lines[i] + "\n";
             target.append(tmp);
         }
+        int maxText = 4096;
         std::cout <<  target << "\n";
+        if(target.size() >= maxText){
+            target= target.substr(0, maxText);
+        }
         int resp = ebmed(target);
         std::cout << "resp=" << resp << "\n";
+        if(resp <= 0){
+            std::cout << "error, addTextFiles.ebmed=0" << "\n";
+            return;
+        }
     }
     std::cout << "========================================\n";
 }
