@@ -14,6 +14,7 @@
 #include "include/EmbeddingClient.hpp"
 #include "include/HttpClient.hpp"
 #include "include/dotenv.h"
+#include "include/StringUtil.hpp"
 
 using namespace std;
 
@@ -115,11 +116,9 @@ void addTextFiles(const std::vector<TextFile>& files) {
             std::string tmp = tf.lines[i] + "\n";
             target.append(tmp);
         }
-        int maxText = 4096;
-        //std::cout <<  target << "\n";
-        if(target.size() >= maxText){
-            target= target.substr(0, maxText);
-        }        
+        StringUtil sLib("");
+        target =sLib.get_top_chars(target, 1000);
+        std::cout <<  "target.size()=" << target.size() << "\n";         
         int resp = ebmed(target);
         std::cout << "resp=" << resp << "\n";
         if(resp <= 0){
