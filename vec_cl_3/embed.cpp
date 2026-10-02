@@ -14,7 +14,6 @@
 #include "include/EmbeddingClient.hpp"
 #include "include/HttpClient.hpp"
 #include "include/dotenv.h"
-#include "include/MyTestData.hpp"
 #include "include/StringUtil.hpp"
 
 using namespace std;
