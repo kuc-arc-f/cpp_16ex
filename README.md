@@ -1,10 +1,10 @@
 ﻿# cpp_16ex
 
- Version: 0.9.1
+ Version: 0.9.2
 
  date    : 2026/09/11
  
- update : 2026/09/28
+ update : 2026/10/03
 
 ***
 
