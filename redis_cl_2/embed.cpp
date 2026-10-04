@@ -20,7 +20,6 @@ using namespace std;
 
 using json = nlohmann::json;
 
-//std::string TABLE_NAME = "document";
 std::string API_URL_BASE = "http://localhost:8888";
 std::string PREFIX_KEY="";
 
@@ -29,15 +28,41 @@ struct QueryReq {
 };   
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(QueryReq, input)
 
-/**
-*
-* @param
-*
-* @return
-*/
-int ebmed(std::string query){        
+int send_vector(std::string query){        
     try{
         HttpClient client(30 /*timeout*/, true /*verify_ssl*/);      
+        int ret = 0;
+        auto embeddings = EmbeddingStart(query);
+        std::cout << "vlen=" << embeddings.size() << std::endl;
+        auto vec = embeddings;
+        VectorCreateReq vdat;
+        vdat.prefix = PREFIX_KEY;
+        vdat.content = query;
+        vdat.vector = vec;
+        json j1 = vdat;
+        std::string json_str = j1.dump();
+        //std::cout << json_str << std::endl;
+
+        std::string url = API_URL_BASE + "/api/insert";
+
+        auto resp = client.post_json(url, json_str);
+        print_response("POST-JSON:", resp);
+        std::cout << "resp.Status : " << resp.status_code << "\n";  
+        if (resp.is_ok() == false) {
+            std::cout << "error ,  /api/insert resp.status_code = NG" << "\n";
+            return 0;
+        }  
+        return 1;      
+    } catch (const std::exception& e) {
+        std::cout << "Error , main" << std::endl;
+        return 1;
+    }        
+    return 0;
+}
+/*
+int ebmed(std::string query){        
+    try{
+        HttpClient client(30, true);      
         int ret = 0;
         auto embeddings = EmbeddingStart(query);
         std::cout << "vlen=" << embeddings.size() << std::endl;
@@ -60,7 +85,6 @@ int ebmed(std::string query){
         vdat.vector = emb_str;
         json j1 = vdat;
         std::string json_str = j1.dump();
-        //std::cout << json_str << std::endl;
 
         std::string url = API_URL_BASE + "/api/insert";
 
@@ -78,6 +102,7 @@ int ebmed(std::string query){
     }        
     return 0;
 }
+*/
 
 // 1ファイル分のデータを保持する構造体
 struct TextFile {
@@ -119,10 +144,10 @@ void addTextFiles(const std::vector<TextFile>& files) {
         StringUtil sLib("");
         target =sLib.get_top_chars(target, 1000);
         std::cout <<  "target.size()=" << target.size() << "\n";         
-        int resp = ebmed(target);
+        int resp = send_vector(target);
         std::cout << "resp=" << resp << "\n";
         if(resp <= 0){
-            std::cout << "error, addTextFiles.ebmed=0" << "\n";
+            std::cout << "error, addTextFiles.send_vector=0" << "\n";
             return;
         }        
     }

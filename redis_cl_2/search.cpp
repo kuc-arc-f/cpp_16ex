@@ -165,20 +165,10 @@ int main(int argc, char* argv[])
         auto embeddings = EmbeddingStart(query);
         //std::cout << "vlen=" << embeddings.size() << std::endl;
         auto vec = embeddings;
-        stringstream ss;
-        ss << "[";
-        for (size_t i = 0; i < embeddings.size(); ++i) {
-            if (i > 0) ss << ",";
-            ss << embeddings[i];
-        }
-        ss << "]";
-        string emb_str = ss.str();  
-        std::string res1 = emb_str.substr(0, 40);      
-        std::cout << "res1=" << res1 << std::endl;
         VectorSearchReq req1;
         req1.prefix = PREFIX_KEY;
         req1.limit = 3;
-        req1.vector = emb_str;
+        req1.vector = vec;
         json j1 = req1; // 構造体を代入するだけ！
         std::string json_str = j1.dump();
         //std::cout << json_str << std::endl;

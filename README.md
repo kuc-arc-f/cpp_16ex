@@ -13,6 +13,7 @@ C++ Linux , example
 ***
 ### version
 
+* V_0_9_3: fix, redis_cl_1 vector Search
 * V_0_9_2: fix, redis_cl_1
 * V_0_9_1: new
 
