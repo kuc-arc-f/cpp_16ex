@@ -13,14 +13,14 @@ struct EmbedData {
 struct VectorCreateReq {
     std::string prefix;
     std::string content;
-    std::string vector;
+    std::vector<float> vector;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(VectorCreateReq, prefix, content, vector)
 
 struct VectorSearchReq {
     std::string prefix;
     int limit;
-    std::string vector;
+    std::vector<float> vector;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(VectorSearchReq, prefix, limit, vector)
 

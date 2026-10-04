@@ -187,22 +187,18 @@ int main(int argc, char* argv[])
         json j = json::parse(str);
         auto embedding = j[0]["embedding"];
         auto vec = embedding[0];
-        int vlength = sizeof(vec) / sizeof(vec[0]);
         std::cout << "vlen=" << vec.size() << std::endl;            
-        stringstream ss;
-        ss << "[";
-        for (size_t i = 0; i < vec.size(); ++i) {
-            if (i > 0) ss << ",";
-            ss << vec[i];
+        std::vector<float> vec2; 
+        for(int i=0; i < vec.size(); i++){
+            float f1 = vec[i].get<float>();
+            vec2.push_back(f1);
         }
-        ss << "]";
-        string emb_str = ss.str();  
-        std::string res1 = emb_str.substr(0, 40);      
-        std::cout << "res1=" << res1 << std::endl;   
+        std::cout << "vec2.size=" << vec2.size() << std::endl;        
+
         VectorSearchReq req1;
         req1.prefix = PREFIX_KEY;
         req1.limit = 3;
-        req1.vector = emb_str;
+        req1.vector = vec2;
         json j1 = req1;
         std::string json_str = j1.dump();
         //std::cout << json_str << std::endl;

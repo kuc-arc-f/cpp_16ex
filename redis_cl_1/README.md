@@ -19,6 +19,11 @@ C++ RAG CLI , Vector add search Jev
 * Linux
 
 ***
+### related Vector API Server
+
+https://github.com/kuc-arc-f/cpp_redis_api_vec1
+
+***
 * LIB
 
 ```
@@ -31,7 +36,8 @@ sudo apt install libcurl4-openssl-dev
 ***
 * llama-server
 ```
-/usr/local/llama-b8951/llama-server -m /var/lm_data/qwen/Qwen3-Embedding-0.6B-Q8_0.gguf --embedding  -c 4096 --port 8080
+./llama-server -m /var/lm_data/qwen/Qwen3-Embedding-0.6B-Q8_0.gguf --embedding  -c 4096 --port 8080
+
 ```
 ***
 * embed build
