@@ -36,9 +36,9 @@ sqlite3 ./data/backup.db < table.sql
 
 ***
 * Table: ./task.sql
-* create table , sqlite3 use
+* create table
 ```
-sqlite3 ./data/backup.db
+sqlite3 ./data/backup.db < task.sql
 ```
 ***
 * build
