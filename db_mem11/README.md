@@ -25,6 +25,7 @@ https://github.com/kuc-arc-f/cpp_db_mem_rest
 sudo apt update
 sudo apt-get install libsqlite3-dev
 sudo apt-get install nlohmann-json3-dev
+sudo apt-get install libsodium-dev
 sudo apt install libspdlog-dev libfmt-dev
 ```
 

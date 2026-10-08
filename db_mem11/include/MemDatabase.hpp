@@ -20,6 +20,9 @@ public:
             sqlite3_close(db);
         }
     }
+    sqlite3* getDb(){
+        return db;
+    }
 
     bool init_import(const char* sql) {
         try{    
@@ -134,6 +137,65 @@ public:
         bool success = (sqlite3_step(stmt) == SQLITE_DONE);
         sqlite3_finalize(stmt);
         return success;
+    }
+
+    json ex_json_list(std::vector<std::string> columnNames, const std::string& sql ) {
+        json result;
+        result["status"] = "success";
+
+        std::cout << "selectTableSql.sql=" << sql << "\n";            
+
+        sqlite3_stmt* stmt;
+        int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+
+        if (rc != SQLITE_OK) {
+            result["status"] = "error";
+            result["error"] = sqlite3_errmsg(db);
+            return result;
+        }
+        int columnCount = columnNames.size();
+
+        // データ行を取得
+        json rows = json::array();
+
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            json row;
+
+            for (int i = 0; i < columnCount; i++) {
+                const std::string colName = columnNames[i];
+                int colType = sqlite3_column_type(stmt, i);
+                //std::cout << "colName=" << colName << std::endl;
+                //std::cout << "colType=" << colType << std::endl;
+                switch (colType) {
+                    case SQLITE_INTEGER:
+                        row[colName] = sqlite3_column_int64(stmt, i);
+                        break;
+                    case SQLITE_FLOAT:
+                        row[colName] = sqlite3_column_double(stmt, i);
+                        break;
+                    case SQLITE_TEXT:
+                        row[colName] = reinterpret_cast<const char*>(sqlite3_column_text(stmt, i));
+                        break;
+                    case SQLITE_BLOB:
+                        // BLOBデータはBase64などに変換するか、文字列として扱う
+                        row[colName] = "[BLOBデータ]";
+                        break;
+                    case SQLITE_NULL:
+                    default:
+                        row[colName] = nullptr;
+                        break;
+                }
+            }
+            rows.push_back(row);
+        }
+
+        sqlite3_finalize(stmt);
+
+        result["columns"] = columnNames;
+        result["row_count"] = rows.size();
+        result["data"] = rows;
+
+        return result;
     }
 
     json selectTableSql(const std::string& tableName, const std::string& sql ) {
@@ -336,6 +398,120 @@ public:
 
         return dot / (std::sqrt(norm1Sq) * std::sqrt(norm2Sq));
     }
+
+    // メールアドレスの存在確認
+    bool emailExists(const std::string& email) {
+        std::string sql = "SELECT COUNT(*) FROM User WHERE email = ?;";
+        sqlite3_stmt* stmt;
+        
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+            return false;
+        }
+
+        sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_STATIC);
+
+        bool exists = false;
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            exists = sqlite3_column_int(stmt, 0) > 0;
+        }
+
+        sqlite3_finalize(stmt);
+        return exists;
+    }
+
+    // パスワードハッシュ化（libsodium）
+    std::string hashPassword(const std::string& password) {
+        char hashed_password[crypto_pwhash_STRBYTES];
+        
+        if (crypto_pwhash_str(hashed_password, 
+                              password.c_str(), 
+                              password.length(),
+                              crypto_pwhash_OPSLIMIT_INTERACTIVE,
+                              crypto_pwhash_MEMLIMIT_INTERACTIVE) != 0) {
+            throw std::runtime_error("Password hashing failed");
+        }
+        
+        return std::string(hashed_password);
+    }
+
+    std::string get_sql_user(
+        const std::string& email, const std::string& name, const std::string& password
+    )
+    {
+        std::string ret = "";
+        if (email.find('@') == std::string::npos || email.find('.') == std::string::npos) {
+            return ret;
+        }
+        if (password.length() < 4) {
+            return ret;
+        }
+
+        std::string password_hash = hashPassword(password);
+
+        std::cout << "password=" << password << std::endl;
+        std::string sql = "INSERT INTO User (email, name, password) VALUES ";
+        sql += "('" + email+ "', '" + name + "', '" + password_hash+ "');";
+        return sql;
+    }
+
+    // ユーザー登録
+    bool registerUser(const std::string& email, const std::string& password) {
+        // メールアドレスのバリデーション（簡易版）
+        if (email.find('@') == std::string::npos || email.find('.') == std::string::npos) {
+            return false;
+        }
+
+        std::cout << "password=" << password << std::endl;
+
+        // パスワードのバリデーション（最低8文字）
+        if (password.length() < 4) {
+            return false;
+        }
+
+        std::string password_hash = hashPassword(password);
+        std::string sql = "INSERT INTO User (email, password) VALUES (?, ?);";
+        sqlite3_stmt* stmt;
+        
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+            return false;
+        }
+
+        sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 2, password_hash.c_str(), -1, SQLITE_STATIC);
+
+        int rc = sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+
+        return rc == SQLITE_DONE;
+    }    
+
+    std::string getPasswordHash(const std::string& email) {
+        std::string query = "SELECT password FROM User WHERE email = '" + email + "';";
+        std::string result = "";
+        
+        auto callback = [](void* data, int argc, char** argv, char** azColName) -> int {
+            if (argc > 0 && argv[0]) {
+                std::string* result = static_cast<std::string*>(data);
+                *result = argv[0];
+            }
+            return 0;
+        };
+        
+        char* errMsg = nullptr;
+        int rc = sqlite3_exec(db, query.c_str(), callback, &result, &errMsg);
+        
+        if (rc != SQLITE_OK) {
+            std::cerr << "SQL error: " << errMsg << std::endl;
+            sqlite3_free(errMsg);
+            return result;
+        }
+        
+        if (result.empty()) {
+            return result;
+        }
+        
+        return result;
+    } 
 
     EmbedData getOneItem(std::string table_name) {
         EmbedData ret;

@@ -1,7 +1,7 @@
 CXX      = clang++
 CXXFLAGS = -std=c++17 -pthread -I./include
 #CXXFLAGS = -Wall -O2 -I./include
-LIBS     =  -lsqlite3 -luuid -lspdlog -lfmt
+LIBS     =  -lsqlite3 -luuid -lspdlog -lfmt -lsodium
 TARGET   = db_mem_rest_server
 
 .PHONY: all clean install

@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <sqlite3.h>
+#include <sodium.h>
 #include <thread>
 #include <vector>
 #include <mutex>
@@ -17,6 +18,8 @@
 #include "include/models.hpp"
 #include "include/BackupDb.hpp"
 #include "include/MemDatabase.hpp"
+#include "include/auth.hpp"
+#include "include/JoinQuery.hpp"
 
 using json = nlohmann::json;
 
@@ -206,20 +209,31 @@ int main() {
             json j = json::parse(req.body);
 
             // 3. データの取り出し (例: {"name": "Gopher", "id": 123})
-            /*
-            std::string table = j.at("table").get<std::string>();
-            std::cout << "table=" << table << "\n";
-            std::string id = j.at("id").get<std::string>();
-            std::cout << "id=" << id << "\n";
-            */
+            std::string action_name = j.at("action_name").get<std::string>();
+            std::cout << "action_name=" << action_name << "\n";
+            std::string sql = j.at("sql").get<std::string>();
+            std::cout << "sql=" << sql << "\n";
+            auto db = memDb.getDb();
+            std::string outStr;
+            JoinQuery jLib("");
+            json j2;
+            if(action_name == "ex_chat_post_list"){
+                j2 = jLib.ex_select_chat_post_list(db, sql);            
+            }
+            if(action_name == "ex_chat_thread_list"){
+                j2 = jLib.ex_select_chat_thread_list(db ,sql);
+            }
+            outStr = j2.dump();
+            std::cout << outStr << std::endl;            
 
-            NormalRespopnse re1;
+            SearchListResp re1;
             re1.ret_code = 200;
-            json j1 = re1; // 構造体を代入するだけ！
+            re1.data = outStr;
+            json j1 = re1;
             std::string json_str = j1.dump();
-            std::cout << json_str << std::endl;            
-
-            res.status = 201;
+            std::cout << json_str << std::endl; 
+            
+            res.status = 200;
             res.set_content(json_str, "application/json");
         } catch (const std::exception& e) {
             std::cout << "\n[ERROR] " << e.what() << "\n";
@@ -229,6 +243,135 @@ int main() {
         }        
     });    
 
+    svr.Post("/api/login", [](const httplib::Request& req, httplib::Response& res) {
+        std::lock_guard<std::mutex> lk(g_mutex);
+        // 1. Content-Typeの確認
+        if (req.get_header_value("Content-Type") != "application/json") {
+            res.status = 400;
+            res.set_content("Expected application/json", "text/plain");
+            return;
+        }        
+        try{
+            // 2. JSONデコード (req.body をパース)
+            json j = json::parse(req.body);
+            // 3. データの取り出し (例: {"name": "Gopher", "id": 123})
+            std::string email = j.at("email").get<std::string>();
+            std::cout << "email=" << email << "\n";
+            std::string password = j.at("password").get<std::string>();
+            std::cout << "password=" << password << "\n";
+
+            // 必須フィールドのチェック
+            if (email.empty() || password.empty()) {
+                res.status = 400;
+                res.set_content("Email and password are required", "text/plain");
+                return;                
+            }
+            // ユーザーのパスワードハッシュを取得
+            auto stored_hash = memDb.getPasswordHash(email);
+            if (stored_hash.empty()) {
+                res.status = 400;
+                res.set_content("error, pass none getPasswordHash", "text/plain");
+                return;                
+            }  
+            Auth aLib("");
+            if (!aLib.verifyPassword(password, stored_hash)) {
+                res.status = 400;
+                res.set_content("error, verifyPassword , Invalid credentials", "text/plain");
+                return;                
+            }                    
+
+            //validate
+            SearchListResp re1;
+            re1.ret_code = 200;
+            re1.data = "OK";
+            json j1 = re1;
+            std::string json_str = j1.dump();
+            std::cout << json_str << std::endl;            
+
+            res.status = 200;
+            res.set_content(json_str, "application/json");
+        } catch (const std::exception& e) {
+            std::cout << "\n[ERROR] " << e.what() << "\n";
+            // キーが存在しない場合など
+            res.status = 500;
+            res.set_content("Internal Server Error", "text/plain");
+        }        
+    });
+
+    svr.Post("/api/signup", [](const httplib::Request& req, httplib::Response& res) {
+        std::lock_guard<std::mutex> lk(g_mutex);
+        // 1. Content-Typeの確認
+        if (req.get_header_value("Content-Type") != "application/json") {
+            res.status = 400;
+            res.set_content("Expected application/json", "text/plain");
+            return;
+        }        
+        try{
+            // 2. JSONデコード (req.body をパース)
+            json j = json::parse(req.body);
+            // 3. データの取り出し (例: {"name": "Gopher", "id": 123})
+            std::string email = j.at("email").get<std::string>();
+            std::cout << "email=" << email << "\n";
+            std::string password = j.at("password").get<std::string>();
+            std::cout << "password=" << password << "\n";
+            std::string name = j.at("name").get<std::string>();
+            std::cout << "name=" << name << "\n";
+
+            // 必須フィールドのチェック
+            if (email.empty() || password.empty()) {
+                res.status = 400;
+                res.set_content("Email and password are required", "text/plain");
+                return;                
+            }
+            if (name.empty()) {
+                res.status = 400;
+                res.set_content("error, name required", "text/plain");
+                return;                
+            }            
+            // メールアドレスの重複チェック
+            if (memDb.emailExists(email)) {
+                res.status = 400;
+                res.set_content("Email already registered", "text/plain");
+                return;                
+            } 
+            std::string sql = memDb.get_sql_user(email, name , password); 
+            std::cout << "sql=" << sql << "\n";
+            if(sql.empty()){
+                res.status = 500;
+                res.set_content("error, sql none get_sql_user", "text/plain");
+                return;                
+            }
+            uuid_t uuid;
+            char uuid_str[37];
+            uuid_generate(uuid);
+            uuid_unparse(uuid, uuid_str);
+            std::cout << "UUID: " << uuid_str << std::endl;
+            bool success = memDb.executeSql(sql);
+            bool ok_cache = memDb.cache_add(uuid_str, sql);                       
+
+            // ユーザー登録
+            if (!success) {
+                res.status = 500;
+                res.set_content("Registration failed", "text/plain");
+                return;                
+            }                      
+            //validate
+            SearchListResp re1;
+            re1.ret_code = 200;
+            re1.data = "OK";
+            json j1 = re1;
+            std::string json_str = j1.dump();
+            std::cout << json_str << std::endl;            
+
+            res.status = 200;
+            res.set_content(json_str, "application/json");
+        } catch (const std::exception& e) {
+            std::cout << "\n[ERROR] " << e.what() << "\n";
+            // キーが存在しない場合など
+            res.status = 500;
+            res.set_content("Internal Server Error", "text/plain");
+        }        
+    });
     // ── 起動 ────────────────────────────────
     std::thread th1(backup_handle);
 
